@@ -1,0 +1,6 @@
+*.exe
+DFA-2.*
+*.o
+DFA-2.c
+text*
+test-1*
