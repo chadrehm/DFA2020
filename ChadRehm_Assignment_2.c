@@ -7,11 +7,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 
 #define MAX_LEN_STATE 25
 #define FALSE 0
 #define TRUE 1
+
+typedef unsigned int bool;  // %%twb -- added in place of above include.
 
 /*
  * Struct definitions
@@ -64,6 +65,10 @@ char *fgetstr(char *string, int n, FILE *stream);
 
 /* 
  * 	Entry point to program.
+ *  The processDfa is 
+ *  Calling processDfa is a big O of n squared that is the largest 
+ *  big O of all the functions called in the method.  The total
+ *  big O of the program is n squared.
  */
 int main() {
     int dfaSource = getDfaSource();
@@ -74,11 +79,11 @@ int main() {
     if (dfaSource == 1) {
         buildDFA(autoPtr);
         
+        char input[100];
         printf("Would you like to save this DFA (y or n)?\n");
-    	fflush (stdin);
-		char save = getchar();
-		fflush (stdin);
-		if (save == 'y') {
+    	scanf("%s", input);
+    	
+		if (input[0] == 'y') {
 			saveDFA(autoPtr);
 		}
 		
@@ -97,18 +102,20 @@ int main() {
 
 /* 
  * 	Save a user built DFA
+ *  There is two loops in seires so the big O is O(2*n) or O(n).
  */
 void saveDFA(AUTOMATON *autoPtr) {
 	char filePath[1000];
 	int initialStateIdx;
 	FILE *fp;
+	int idx;	
+	TRANSITION * top;
 
     printf("What file path name:\n");
     scanf("%s", filePath);
     
     fp = fopen (filePath, "w+");
     
-	int idx;
 	for (idx = 0; idx < autoPtr->statesCount; idx++) {
 		fputs (autoPtr->states[idx]->stateName, fp);
 		
@@ -135,7 +142,7 @@ void saveDFA(AUTOMATON *autoPtr) {
 	
 	fputs ("\n", fp);
 	
-	TRANSITION * top = autoPtr->transitionTop;
+	top = autoPtr->transitionTop;
 
 	while (top->next != NULL) {
 		fprintf (fp, "%s,%s,%s\n", top->startState, top->symbol, top->endState);
@@ -149,8 +156,10 @@ void saveDFA(AUTOMATON *autoPtr) {
  *  There is a single loop so the big O is O(n).
 */
 void readFile(AUTOMATON *autoPtr, char *filepath) {
-	FILE *fp = fopen( filepath, "r");
+	
 	char line[100];
+	DELTA *delta;
+	FILE *fp = fopen( filepath, "r");
 
 	if (fp != 0) {
 	
@@ -170,7 +179,7 @@ void readFile(AUTOMATON *autoPtr, char *filepath) {
 				transition = buildTransition(line);
 				top = insertTransition(top, transition);
 				
-				DELTA *delta = (DELTA *)malloc(sizeof(DELTA));
+				delta = (DELTA *)malloc(sizeof(DELTA));
 				delta = buildDelta(transition);		
 				insertDelta(autoPtr, transition->startState, delta);
 			}
@@ -221,10 +230,9 @@ void buildDFA(AUTOMATON *autoPtr) {
 		insertDelta(autoPtr, transition->startState, delta);
 					
 		printf("Another transition (y or n)?\n");
-    	fflush (stdin);
-		done = getchar();
-		fflush (stdin);
-	} while (done == 'y');
+		scanf("%s", input);
+
+	} while (input[0] == 'y');
 	autoPtr->transitionTop = top;
 }
 
@@ -408,6 +416,7 @@ int findInitalState(AUTOMATON *autoPtr) {
 /* 
  * 	Confirms that the user input character is a symbol on the current
  *  State.  Returns the name of the next state.
+ *  There is a single loop so the big O is O(n).
  */ 
 char* findSymbol(STATE *state, char symbol) {
 	DELTA *current = NULL; 
@@ -425,6 +434,7 @@ char* findSymbol(STATE *state, char symbol) {
 
 /* 
  * 	Prompt user for source of DFA.  File or Console.
+ *  This has no loops the big O is O(1).
  */ 
 int getDfaSource () {
     int dfaSource;
@@ -439,6 +449,8 @@ int getDfaSource () {
 /* 
  * 	Prompt user for input to DFA. Repeat until user doesn't input 'y'.
  *  Accept or Reject input.
+ *  This has one loop that runs each input that calls another loop that
+ *  big O(n) this is big O of n squared.
  */ 
 void processDfa(AUTOMATON *autoPtr) {
 	char *userInput;
@@ -476,6 +488,7 @@ void processDfa(AUTOMATON *autoPtr) {
 		done = getchar();
 		fflush (stdin);
 	} while (done == 'y');
+	free(autoPtr);
 }
 
 //	fgetstr() - mimics behavior of fgets(), but removes new-line
